@@ -1,0 +1,699 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soundboard Admin</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link
+    href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@300;400;600&display=swap"
+    rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0e0e10;
+      --surface: #18181b;
+      --border: #2a2a2e;
+      --accent: #e4ff3d;
+      --accent2: #ff6b35;
+      --text: #e8e8e8;
+      --muted: #6b6b7b;
+      --danger: #ff4455;
+      --radius: 6px;
+    }
+
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'IBM Plex Sans', sans-serif;
+      min-height: 100vh;
+    }
+
+    /* ── Header ── */
+    header {
+      border-bottom: 1px solid var(--border);
+      padding: 18px 32px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      background: var(--bg);
+      z-index: 10;
+    }
+
+    .logo {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 15px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+    }
+
+    .logo span {
+      color: var(--muted);
+      font-weight: 400;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 12px;
+    }
+
+    .nav-btn {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      padding: 7px 14px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      text-decoration: none;
+      transition: border-color 0.15s, color 0.15s;
+    }
+
+    .nav-btn:hover {
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    /* ── Main Layout ── */
+    main {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 32px 24px 64px;
+    }
+
+    .section-title {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      text-transform: uppercase;
+      margin-bottom: 16px;
+    }
+
+    /* ── Add Form ── */
+    .add-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      margin-bottom: 40px;
+    }
+
+    .add-card h2 {
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 20px;
+      color: var(--accent);
+      font-family: 'IBM Plex Mono', monospace;
+      letter-spacing: 0.05em;
+    }
+
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 2fr auto auto;
+      gap: 10px;
+      align-items: end;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    label {
+      font-size: 11px;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="url"] {
+      background: var(--bg);
+      border: 1px solid var(--border);
+      color: var(--text);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      padding: 9px 12px;
+      border-radius: var(--radius);
+      width: 100%;
+      transition: border-color 0.15s;
+      outline: none;
+    }
+
+    input:focus {
+      border-color: var(--accent);
+    }
+
+    input::placeholder {
+      color: var(--muted);
+    }
+
+    .btn-add {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.06em;
+      padding: 9px 20px;
+      border-radius: var(--radius);
+      cursor: pointer;
+      white-space: nowrap;
+      transition: opacity 0.15s;
+      height: fit-content;
+      align-self: end;
+    }
+
+    .btn-add:hover {
+      opacity: 0.85;
+    }
+
+    .preview-box {
+      width: 52px;
+      height: 36px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      align-self: end;
+    }
+
+    .preview-box img,
+    .preview-box video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .preview-placeholder {
+      font-size: 18px;
+      color: var(--muted);
+    }
+
+    /* ── Grid ── */
+    .grid-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 16px;
+    }
+
+    .count-badge {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 11px;
+      color: var(--muted);
+    }
+
+    .sb-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+    }
+
+    .sb-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      position: relative;
+      transition: border-color 0.15s, transform 0.15s;
+      cursor: default;
+    }
+
+    .sb-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-2px);
+    }
+
+    .sb-thumb {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: var(--bg);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .sb-thumb img,
+    .sb-thumb video {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .thumb-placeholder {
+      font-size: 32px;
+      color: var(--border);
+    }
+
+    .sb-info {
+      padding: 10px 10px 8px;
+    }
+
+    .sb-name {
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      margin-bottom: 4px;
+    }
+
+    .sb-url {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      color: var(--muted);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sb-actions {
+      display: flex;
+      gap: 6px;
+      padding: 0 10px 10px;
+    }
+
+    .btn-del {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--danger);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 10px;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+      transition: background 0.15s;
+      flex: 1;
+    }
+
+    .btn-del:hover {
+      background: rgba(255, 68, 85, 0.12);
+      border-color: var(--danger);
+    }
+
+    .type-badge {
+      position: absolute;
+      top: 6px;
+      right: 6px;
+      background: rgba(0, 0, 0, 0.7);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 9px;
+      letter-spacing: 0.08em;
+      color: var(--accent);
+      padding: 2px 6px;
+      border-radius: 3px;
+      text-transform: uppercase;
+    }
+
+    .empty-state {
+      grid-column: 1/-1;
+      text-align: center;
+      padding: 60px 20px;
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      border: 1px dashed var(--border);
+      border-radius: var(--radius);
+    }
+
+    .empty-state .icon {
+      font-size: 36px;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    /* ── Toast ── */
+    #toast {
+      position: fixed;
+      bottom: 24px;
+      right: 24px;
+      background: var(--surface);
+      border: 1px solid var(--accent);
+      color: var(--accent);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      padding: 10px 18px;
+      border-radius: var(--radius);
+      opacity: 0;
+      transform: translateY(8px);
+      transition: opacity 0.2s, transform 0.2s;
+      pointer-events: none;
+      z-index: 100;
+    }
+
+    #toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    /* ── Modal Edit ── */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0, 0, 0, 0.7);
+      z-index: 50;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .modal-overlay.open {
+      display: flex;
+    }
+
+    .modal {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 28px;
+      width: 90%;
+      max-width: 480px;
+    }
+
+    .modal h3 {
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 13px;
+      color: var(--accent);
+      margin-bottom: 20px;
+    }
+
+    .modal .form-col {
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+      justify-content: flex-end;
+    }
+
+    .btn-cancel {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      padding: 8px 16px;
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
+
+    .btn-save {
+      background: var(--accent);
+      color: #000;
+      border: none;
+      font-family: 'IBM Plex Mono', monospace;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 8px 20px;
+      border-radius: var(--radius);
+      cursor: pointer;
+    }
+
+    @media (max-width: 600px) {
+      .form-row {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .form-row .btn-add,
+      .form-row .preview-box {
+        grid-column: span 2;
+      }
+
+      header {
+        padding: 14px 16px;
+      }
+
+      main {
+        padding: 20px 16px 48px;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <header>
+    <div class="logo">SECRET<span>BOARD</span> / admin</div>
+    <div class="nav-links">
+      <a href="control.html" class="nav-btn">→ Controller</a>
+      <a href="widget.html" class="nav-btn" target="_blank">↗ Widget</a>
+    </div>
+  </header>
+
+  <main>
+    <!-- Add Form -->
+    <div class="add-card">
+      <h2>+ ADD SOUNDBOARD</h2>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" id="inp-name" placeholder="e.g. GigaChad" />
+        </div>
+        <div class="form-group">
+          <label>URL (video / gif / image)</label>
+          <input type="url" id="inp-url" placeholder="https://media.giphy.com/..." />
+        </div>
+        <div class="form-group">
+          <label>GIF dur (s)</label>
+          <input type="number" id="inp-dur" placeholder="4" min="1" max="60" style="width:80px;" />
+        </div>
+        <div class="preview-box" id="preview-box">
+          <span class="preview-placeholder">🎞</span>
+        </div>
+        <button class="btn-add" onclick="addItem()">ADD</button>
+      </div>
+    </div>
+
+    <!-- Grid -->
+    <div class="grid-header">
+      <span class="section-title">Soundboards</span>
+      <span class="count-badge" id="count-badge">0 items</span>
+    </div>
+
+    <div class="sb-grid" id="sb-grid">
+      <div class="empty-state">
+        <span class="icon">📭</span>
+        No soundboards yet. Add one above.
+      </div>
+    </div>
+  </main>
+
+  <!-- Edit Modal -->
+  <div class="modal-overlay" id="modal">
+    <div class="modal">
+      <h3>✎ EDIT SOUNDBOARD</h3>
+      <div class="form-col">
+        <div class="form-group">
+          <label>Name</label>
+          <input type="text" id="edit-name" />
+        </div>
+        <div class="form-group">
+          <label>URL</label>
+          <input type="url" id="edit-url" />
+        </div>
+        <div class="form-group">
+          <label>GIF Duration (seconds)</label>
+          <input type="number" id="edit-dur" min="1" max="60" />
+        </div>
+      </div>
+      <div class="modal-actions">
+        <button class="btn-cancel" onclick="closeModal()">Cancel</button>
+        <button class="btn-save" onclick="saveEdit()">Save</button>
+      </div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, set, remove, onValue, push } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    // ─── PASTE YOUR FIREBASE CONFIG HERE ───────────────────────────────────────
+    const firebaseConfig = {
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+      databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+      storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+      appId: import.meta.env.VITE_FIREBASE_APP_ID
+    };
+    // ───────────────────────────────────────────────────────────────────────────
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+    const itemsRef = ref(db, 'soundboards');
+
+    let items = {};
+    let editKey = null;
+
+    // ── helpers ──
+    function mediaType(url) {
+      if (!url) return 'img';
+      if (/\.(mp4|webm|ogg|mov)/i.test(url)) return 'video';
+      return 'img'; // gif / image
+    }
+
+    function thumbEl(url, small = false) {
+      const t = mediaType(url);
+      if (t === 'video') {
+        return `<video src="${url}" muted loop autoplay playsinline style="width:100%;height:100%;object-fit:cover;"></video>`;
+      }
+      return `<img src="${url}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;" />`;
+    }
+
+    function typeBadge(url) {
+      if (!url) return '';
+      if (/\.(mp4|webm|ogg|mov)/i.test(url)) return '<span class="type-badge">VIDEO</span>';
+      if (/\.gif/i.test(url) || url.includes('giphy')) return '<span class="type-badge">GIF</span>';
+      return '<span class="type-badge">IMG</span>';
+    }
+
+    // ── render grid ──
+    function renderGrid() {
+      const grid = document.getElementById('sb-grid');
+      const keys = Object.keys(items);
+      document.getElementById('count-badge').textContent = `${keys.length} item${keys.length !== 1 ? 's' : ''}`;
+
+      if (keys.length === 0) {
+        grid.innerHTML = `<div class="empty-state"><span class="icon">📭</span>No soundboards yet. Add one above.</div>`;
+        return;
+      }
+
+      grid.innerHTML = keys.map(k => {
+        const it = items[k];
+        return `
+        <div class="sb-card">
+          <div class="sb-thumb">
+            ${thumbEl(it.url)}
+            ${typeBadge(it.url)}
+          </div>
+          <div class="sb-info">
+            <div class="sb-name" title="${it.name}">${it.name}</div>
+            <div class="sb-url" title="${it.url}">${it.url}</div>
+          </div>
+          <div class="sb-actions">
+            <button class="btn-del" style="color:var(--muted);border-color:var(--border);" onclick="openEdit('${k}')">✎ Edit</button>
+            <button class="btn-del" onclick="deleteItem('${k}')">✕ Delete</button>
+          </div>
+        </div>`;
+      }).join('');
+    }
+
+    // ── live preview on URL input ──
+    const urlInput = document.getElementById('inp-url');
+    urlInput.addEventListener('input', () => {
+      const url = urlInput.value.trim();
+      const box = document.getElementById('preview-box');
+      if (!url) {
+        box.innerHTML = '<span class="preview-placeholder">🎞</span>';
+        return;
+      }
+      if (mediaType(url) === 'video') {
+        box.innerHTML = `<video src="${url}" muted loop autoplay playsinline style="width:100%;height:100%;object-fit:cover;"></video>`;
+      } else {
+        box.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;" />`;
+      }
+    });
+
+    // ── Add ──
+    window.addItem = function () {
+      const name = document.getElementById('inp-name').value.trim();
+      const url = document.getElementById('inp-url').value.trim();
+      const dur = parseInt(document.getElementById('inp-dur').value) || 4;
+
+      if (!name || !url) { toast('Name & URL required'); return; }
+
+      const newRef = push(itemsRef);
+      set(newRef, { name, url, durationSeconds: dur })
+        .then(() => {
+          document.getElementById('inp-name').value = '';
+          document.getElementById('inp-url').value = '';
+          document.getElementById('inp-dur').value = '';
+          document.getElementById('preview-box').innerHTML = '<span class="preview-placeholder">🎞</span>';
+          toast('Added!');
+        });
+    };
+
+    // ── Delete ──
+    window.deleteItem = function (key) {
+      if (!confirm('Delete this soundboard?')) return;
+      remove(ref(db, `soundboards/${key}`)).then(() => toast('Deleted'));
+    };
+
+    // ── Edit ──
+    window.openEdit = function (key) {
+      editKey = key;
+      const it = items[key];
+      document.getElementById('edit-name').value = it.name;
+      document.getElementById('edit-url').value = it.url;
+      document.getElementById('edit-dur').value = it.durationSeconds || 4;
+      document.getElementById('modal').classList.add('open');
+    };
+
+    window.closeModal = function () {
+      document.getElementById('modal').classList.remove('open');
+      editKey = null;
+    };
+
+    window.saveEdit = function () {
+      if (!editKey) return;
+      const name = document.getElementById('edit-name').value.trim();
+      const url = document.getElementById('edit-url').value.trim();
+      const dur = parseInt(document.getElementById('edit-dur').value) || 4;
+      if (!name || !url) { toast('Name & URL required'); return; }
+      set(ref(db, `soundboards/${editKey}`), { name, url, durationSeconds: dur })
+        .then(() => { closeModal(); toast('Saved!'); });
+    };
+
+    // ── Toast ──
+    let toastTimer;
+    window.toast = function (msg) {
+      const el = document.getElementById('toast');
+      el.textContent = msg;
+      el.classList.add('show');
+      clearTimeout(toastTimer);
+      toastTimer = setTimeout(() => el.classList.remove('show'), 2000);
+    };
+
+    // ── Firebase listener ──
+    onValue(itemsRef, (snap) => {
+      items = snap.val() || {};
+      renderGrid();
+    });
+
+    // close modal on overlay click
+    document.getElementById('modal').addEventListener('click', (e) => {
+      if (e.target === e.currentTarget) closeModal();
+    });
+  </script>
+</body>
+
+</html>

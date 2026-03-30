@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Soundboard Widget</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      background: transparent;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    #media-container {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      opacity: 0;
+      transition: opacity 0.15s ease;
+      pointer-events: none;
+    }
+
+    #media-container.visible {
+      opacity: 1;
+    }
+
+    #media-el {
+      max-width: 100%;
+      max-height: 100%;
+      object-fit: contain;
+      display: block;
+      border-radius: 4px;
+    }
+
+    #label {
+      position: absolute;
+      bottom: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.65);
+      color: #fff;
+      font-family: 'Segoe UI', sans-serif;
+      font-size: 13px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      padding: 4px 12px;
+      border-radius: 20px;
+      white-space: nowrap;
+      opacity: 0;
+      transition: opacity 0.2s ease;
+    }
+
+    #media-container.visible #label {
+      opacity: 1;
+    }
+
+    /* spinner for loading */
+    #spinner {
+      display: none;
+      position: absolute;
+      width: 36px;
+      height: 36px;
+      border: 3px solid rgba(255, 255, 255, 0.2);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    @keyframes spin {
+      to {
+        transform: rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div id="media-container">
+    <div id="spinner"></div>
+    <!-- replaced dynamically -->
+    <img id="media-el" src="" alt="" style="display:none;" />
+    <span id="label"></span>
+  </div>
+
+  <!-- Firebase SDK -->
+  <script type="module">
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+    // ─── PASTE YOUR FIREBASE CONFIG HERE ───────────────────────────────────────
+    const firebaseConfig = {
+      apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+      authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+      databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
+      projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+      storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+      messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+      appId: import.meta.env.VITE_FIREBASE_APP_ID
+    };
+    // ───────────────────────────────────────────────────────────────────────────
+
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    const container = document.getElementById('media-container');
+    const mediaEl = document.getElementById('media-el');
+    const label = document.getElementById('label');
+    const spinner = document.getElementById('spinner');
+
+    let hideTimer = null;
+    let currentId = null;
+
+    function isGif(url) {
+      return url.toLowerCase().includes('.gif') || url.toLowerCase().includes('giphy.com');
+    }
+
+    function isVideo(url) {
+      return /\.(mp4|webm|ogg|mov)(\?|$)/i.test(url);
+      // return url.includes("drive.google.com")
+    }
+
+    function showMedia(item) {
+      // clear any pending hide
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+
+      currentId = item.id;
+      label.textContent = item.name || '';
+
+      // remove old video element if any
+      const oldVideo = document.getElementById('media-video');
+      if (oldVideo) oldVideo.remove();
+      mediaEl.style.display = 'none';
+
+      spinner.style.display = 'block';
+      container.classList.remove('visible');
+
+      if (isVideo(item.url)) {
+        // build <video>
+        const video = document.createElement('video');
+        video.id = 'media-video';
+        video.src = item.url;
+        video.autoplay = true;
+        video.controls = true;
+        video.muted = false;
+        video.playsInline = true;
+        video.style.maxWidth = '100%';
+        video.style.maxHeight = '100%';
+        video.style.objectFit = 'contain';
+        video.style.borderRadius = '4px';
+        container.insertBefore(video, label);
+
+        video.oncanplay = () => {
+          spinner.style.display = 'none';
+          container.classList.add('visible');
+        };
+
+        video.onended = () => {
+          hideMedia();
+        };
+
+        video.onerror = (error) => {
+          console.log("error : ", error);
+          spinner.style.display = 'none';
+          hideMedia();
+        };
+
+      } else {
+        // GIF or image
+        mediaEl.style.display = 'block';
+        mediaEl.onload = () => {
+          spinner.style.display = 'none';
+          container.classList.add('visible');
+
+          if (isGif(item.url)) {
+            // GIFs: estimate duration from durationSeconds field, fallback 4s
+            const dur = (item.durationSeconds || 4) * 1000;
+            hideTimer = setTimeout(hideMedia, dur);
+          }
+          // static images: stay until interrupted
+        };
+        mediaEl.onerror = () => {
+          spinner.style.display = 'none';
+          hideMedia();
+        };
+        mediaEl.src = item.url;
+      }
+    }
+
+    function hideMedia() {
+      if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+      container.classList.remove('visible');
+      currentId = null;
+      setTimeout(() => {
+        mediaEl.src = '';
+        mediaEl.style.display = 'none';
+        const oldVideo = document.getElementById('media-video');
+        if (oldVideo) oldVideo.remove();
+      }, 200);
+    }
+
+    // ── Listen to Firebase ────────────────────────────────────────────────────
+    const commandRef = ref(db, 'command');
+
+    onValue(commandRef, (snap) => {
+      const cmd = snap.val();
+      if (!cmd) return;
+
+      if (cmd.action === 'play') {
+        showMedia(cmd.item);
+      } else if (cmd.action === 'stop') {
+        hideMedia();
+      }
+    });
+  </script>
+</body>
+
+</html>
