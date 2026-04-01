@@ -100,7 +100,7 @@
   <!-- Firebase SDK -->
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+    import { getDatabase, ref, onValue, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
 
     // ─── PASTE YOUR FIREBASE CONFIG HERE ───────────────────────────────────────
     const firebaseConfig = {
@@ -123,6 +123,7 @@
     const spinner = document.getElementById('spinner');
 
     let hideTimer = null;
+    let fadeOutTimer = null;
     let currentId = null;
 
     function isGif(url) {
@@ -134,16 +135,25 @@
       // return url.includes("drive.google.com")
     }
 
+    function isAudio(url) {
+      return /\.(mp3|wav|m4a|aac|flac)(\?|$)/i.test(url);
+    }
+
     function showMedia(item) {
       // clear any pending hide
       if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+      if (fadeOutTimer) { clearTimeout(fadeOutTimer); fadeOutTimer = null; }
 
       currentId = item.id;
-      label.textContent = item.name || '';
+      // label.textContent = item.name || '';
 
-      // remove old video element if any
-      const oldVideo = document.getElementById('media-video');
-      if (oldVideo) oldVideo.remove();
+      // remove old media elements safely
+      document.querySelectorAll('video, audio').forEach(el => {
+        el.pause();
+        el.src = '';
+        el.removeAttribute('src');
+        el.remove();
+      });
       mediaEl.style.display = 'none';
 
       spinner.style.display = 'block';
@@ -155,7 +165,7 @@
         video.id = 'media-video';
         video.src = item.url;
         video.autoplay = true;
-        video.controls = true;
+        video.controls = false;
         video.muted = false;
         video.playsInline = true;
         video.style.maxWidth = '100%';
@@ -170,13 +180,37 @@
         };
 
         video.onended = () => {
-          hideMedia();
+          triggerGlobalStop();
         };
 
         video.onerror = (error) => {
           console.log("error : ", error);
           spinner.style.display = 'none';
-          hideMedia();
+          triggerGlobalStop();
+        };
+
+      } else if (isAudio(item.url)) {
+        // build <audio>
+        const audio = document.createElement('audio');
+        audio.id = 'media-audio';
+        audio.src = item.url;
+        audio.autoplay = true;
+
+        container.insertBefore(audio, label);
+
+        audio.oncanplay = () => {
+          spinner.style.display = 'none';
+          container.classList.add('visible');
+        };
+
+        audio.onended = () => {
+          triggerGlobalStop();
+        };
+
+        audio.onerror = (error) => {
+          console.log("error : ", error);
+          spinner.style.display = 'none';
+          triggerGlobalStop();
         };
 
       } else {
@@ -205,12 +239,21 @@
       if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
       container.classList.remove('visible');
       currentId = null;
-      setTimeout(() => {
+      if (fadeOutTimer) { clearTimeout(fadeOutTimer); fadeOutTimer = null; }
+      fadeOutTimer = setTimeout(() => {
         mediaEl.src = '';
         mediaEl.style.display = 'none';
-        const oldVideo = document.getElementById('media-video');
-        if (oldVideo) oldVideo.remove();
+        document.querySelectorAll('video, audio').forEach(el => {
+          el.pause();
+          el.src = '';
+          el.removeAttribute('src');
+          el.remove();
+        });
       }, 200);
+    }
+
+    function triggerGlobalStop() {
+      set(commandRef, { action: 'stop', ts: Date.now() });
     }
 
     // ── Listen to Firebase ────────────────────────────────────────────────────

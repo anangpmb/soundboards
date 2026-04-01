@@ -475,7 +475,7 @@
           <input type="text" id="inp-name" placeholder="e.g. GigaChad" />
         </div>
         <div class="form-group">
-          <label>URL (video / gif / image)</label>
+          <label>URL (video / audio / gif / image)</label>
           <input type="url" id="inp-url" placeholder="https://media.giphy.com/..." />
         </div>
         <div class="form-group">
@@ -557,7 +557,8 @@
     // ── helpers ──
     function mediaType(url) {
       if (!url) return 'img';
-      if (/\.(mp4|webm|ogg|mov)/i.test(url)) return 'video';
+      if (/\.(mp4|webm|ogg|mov)(\?|$)/i.test(url)) return 'video';
+      if (/\.(mp3|wav|m4a|aac|flac)(\?|$)/i.test(url)) return 'audio';
       return 'img'; // gif / image
     }
 
@@ -566,12 +567,16 @@
       if (t === 'video') {
         return `<video src="${url}" muted loop autoplay playsinline style="width:100%;height:100%;object-fit:cover;"></video>`;
       }
+      if (t === 'audio') {
+        return `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#18181b;font-size:32px;">🎵</div>`;
+      }
       return `<img src="${url}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;" />`;
     }
 
     function typeBadge(url) {
       if (!url) return '';
-      if (/\.(mp4|webm|ogg|mov)/i.test(url)) return '<span class="type-badge">VIDEO</span>';
+      if (/\.(mp4|webm|ogg|mov)(\?|$)/i.test(url)) return '<span class="type-badge">VIDEO</span>';
+      if (/\.(mp3|wav|m4a|aac|flac)(\?|$)/i.test(url)) return '<span class="type-badge">AUDIO</span>';
       if (/\.gif/i.test(url) || url.includes('giphy')) return '<span class="type-badge">GIF</span>';
       return '<span class="type-badge">IMG</span>';
     }
@@ -618,6 +623,8 @@
       }
       if (mediaType(url) === 'video') {
         box.innerHTML = `<video src="${url}" muted loop autoplay playsinline style="width:100%;height:100%;object-fit:cover;"></video>`;
+      } else if (mediaType(url) === 'audio') {
+        box.innerHTML = `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:#18181b;font-size:20px;">🎵</div>`;
       } else {
         box.innerHTML = `<img src="${url}" style="width:100%;height:100%;object-fit:cover;" />`;
       }
